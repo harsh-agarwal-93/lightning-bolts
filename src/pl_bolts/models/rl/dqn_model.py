@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.strategies import DataParallelStrategy
+from pytorch_lightning.strategies.parallel import ParallelStrategy # DataParallelStrategy
 from torch import Tensor, optim
 from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
@@ -23,7 +23,7 @@ from pl_bolts.utils.stability import under_review
 from pl_bolts.utils.warnings import warn_missing_pkg
 
 if _GYM_AVAILABLE:
-    from gym import Env
+    from gymnasium import Env
 else:  # pragma: no cover
     warn_missing_pkg("gym")
     Env = object
@@ -413,7 +413,7 @@ class DQN(LightningModule):
 
     @staticmethod
     def _use_dp(trainer: Trainer) -> bool:
-        return isinstance(trainer.strategy, DataParallelStrategy)
+        return isinstance(trainer.strategy, ParallelStrategy)
 
 
 @under_review()

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-import gym
+import gymnasium as gym
 from pl_bolts.models.rl.common.gym_wrappers import ToTensor
 from torch import Tensor
 

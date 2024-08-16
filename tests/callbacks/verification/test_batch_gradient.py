@@ -116,10 +116,10 @@ def test_batch_gradient_verification_pl_module(mix_data, device):
     assert result == is_valid
 
 
-@pytest.mark.parametrize("gpus", [0, pytest.param(1, marks=pytest.mark.skipif(**_MARK_REQUIRE_GPU))])
-def test_batch_gradient_verification_callback(gpus):
+@pytest.mark.parametrize("accelerator", ["cpu", pytest.param("gpu", marks=pytest.mark.skipif(**_MARK_REQUIRE_GPU))])
+def test_batch_gradient_verification_callback(accelerator):
     """Test detection of batch gradient mixing with the callback implementation."""
-    trainer = Trainer(gpus=gpus)
+    trainer = Trainer(accelerator=accelerator)
     model = LitModel(mix_data=True)
 
     expected = "Your model is mixing data across the batch dimension."

@@ -75,6 +75,7 @@ class FasterRCNN(LightningModule):
 
         super().__init__()
 
+        self.validation_step_outputs = []
         self.learning_rate = learning_rate
         self.num_classes = num_classes
         self.backbone = backbone
@@ -126,10 +127,11 @@ class FasterRCNN(LightningModule):
         # fasterrcnn takes only images for eval() mode
         outs = self.model(images)
         iou = torch.stack([_evaluate_iou(t, o) for t, o in zip(targets, outs)]).mean()
+        self.validation_step_outputs.append(iou)
         return {"val_iou": iou}
 
-    def validation_epoch_end(self, outs):
-        avg_iou = torch.stack([o["val_iou"] for o in outs]).mean()
+    def on_validation_epoch_end(self):
+        avg_iou = torch.stack(self.validation_step_outputs).mean()
         logs = {"val_iou": avg_iou}
         return {"avg_val_iou": avg_iou, "log": logs}
 

@@ -105,7 +105,7 @@ class VAE(LightningModule):
         if checkpoint_name not in VAE.pretrained_urls:
             raise KeyError(str(checkpoint_name) + " not present in pretrained weights.")
 
-        return self.load_from_checkpoint(VAE.pretrained_urls[checkpoint_name], strict=False)
+        return VAE.load_from_checkpoint(VAE.pretrained_urls[checkpoint_name], strict=False)
 
     def forward(self, x):
         x = self.encoder(x)

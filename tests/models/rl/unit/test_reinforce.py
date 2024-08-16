@@ -1,7 +1,7 @@
 import argparse
 from unittest import TestCase
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
 from pl_bolts.datamodules.experience_source import DiscountedExperienceSource

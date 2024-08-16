@@ -1,7 +1,7 @@
 import argparse
 from unittest import TestCase
 
-import gym
+import gymnasium as gym
 import pytest
 import torch
 from pl_bolts.models.rl.common.agents import Agent

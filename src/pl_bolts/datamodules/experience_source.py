@@ -13,12 +13,12 @@ from pl_bolts.utils.warnings import warn_missing_pkg
 
 try:
     if _GYM_AVAILABLE:
-        from gym import Env
+        from gymnasium import Env
     else:  # pragma: no cover
-        warn_missing_pkg("gym")
+        warn_missing_pkg("gymnasium")
         Env = object
 except ImportError:
-    warn_missing_pkg("gym")
+    warn_missing_pkg("gymnasium")
     Env = object
 
 Experience = namedtuple("Experience", field_names=["state", "action", "reward", "done", "new_state"])
@@ -189,7 +189,8 @@ class ExperienceSource(BaseExperienceSource):
             Experience tuple
 
         """
-        next_state, r, is_done, _ = env.step(action[0])
+        next_state, r, terminated, truncated, *_ = env.step(action[0])
+        is_done = terminated or truncated
 
         self.cur_rewards[env_idx] += r
         self.cur_steps[env_idx] += 1

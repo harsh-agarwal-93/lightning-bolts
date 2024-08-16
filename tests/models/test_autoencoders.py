@@ -14,7 +14,7 @@ def test_vae(tmpdir, datadir, dm_cls):
     trainer = Trainer(
         fast_dev_run=True,
         default_root_dir=tmpdir,
-        gpus=None,
+        accelerator="auto",
     )
 
     trainer.fit(model, datamodule=dm)
@@ -29,7 +29,7 @@ def test_ae(tmpdir, datadir, dm_cls):
     trainer = Trainer(
         fast_dev_run=True,
         default_root_dir=tmpdir,
-        gpus=None,
+        accelerator="auto",
     )
 
     trainer.fit(model, datamodule=dm)
@@ -87,28 +87,35 @@ def test_from_pretrained(datadir):
 
     exception_raised = False
 
-    try:
-        vae = vae.from_pretrained("cifar10-resnet18")
+    # try:
+    vae = vae.from_pretrained("cifar10-resnet18")
 
-        # test forward method on pre-trained weights
-        for x, y in data_loader:
+    # test forward method on pre-trained weights
+    with torch.no_grad():
+        for x, _ in data_loader:
             vae(x)
             break
 
-        vae = vae.from_pretrained("stl10-resnet18")  # try loading weights not compatible with exact architecture
+    vae = vae.from_pretrained("stl10-resnet18")  # try loading weights not compatible with exact architecture
 
-        ae = ae.from_pretrained("cifar10-resnet18")
+    # test forward method on pre-trained weights
+    with torch.no_grad():
+        for x, _ in data_loader:
+            vae(x)
+            break
 
-        # test forward method on pre-trained weights
-        with torch.no_grad():
-            for x, y in data_loader:
-                ae(x)
-                break
+    ae = ae.from_pretrained("cifar10-resnet18")
 
-    except Exception:
-        exception_raised = True
+    # test forward method on pre-trained weights
+    with torch.no_grad():
+        for x, _ in data_loader:
+            ae(x)
+            break
 
-    assert exception_raised is False, "error in loading weights"
+    # except Exception:
+    #     exception_raised = True
+
+    # assert exception_raised is False, "error in loading weights"
 
     keyerror = False
 

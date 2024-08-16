@@ -10,18 +10,18 @@ from pl_bolts.utils.stability import under_review
 from pl_bolts.utils.warnings import warn_missing_pkg
 
 if _GYM_AVAILABLE:
-    import gym.spaces
-    from gym import ObservationWrapper, Wrapper
-    from gym import make as gym_make
+    from gymnasium import spaces
+    from gymnasium import ObservationWrapper, Wrapper
+    from gymnasium import make as gym_make
 else:  # pragma: no cover
-    warn_missing_pkg("gym")
+    warn_missing_pkg("gymnasium")
     Wrapper = object
     ObservationWrapper = object
 
 if _OPENCV_AVAILABLE:
     import cv2
 else:  # pragma: no cover
-    warn_missing_pkg("cv2", pypi_name="opencv-python")
+    warn_missing_pkg("cv2", pypi_name="opencv-python-headless")
 
 
 @under_review()
@@ -119,7 +119,7 @@ class ProcessFrame84(ObservationWrapper):
             raise ModuleNotFoundError("This class uses OpenCV which it is not installed yet.")
 
         super().__init__(env)
-        self.observation_space = gym.spaces.Box(low=0, high=255, shape=(84, 84, 1), dtype=np.uint8)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(84, 84, 1), dtype=np.uint8)
 
     def observation(self, obs):
         """Preprocess the obs."""
@@ -152,7 +152,7 @@ class ImageToPyTorch(ObservationWrapper):
         super().__init__(env)
         old_shape = self.observation_space.shape
         new_shape = (old_shape[-1], old_shape[0], old_shape[1])
-        self.observation_space = gym.spaces.Box(low=0.0, high=1.0, shape=new_shape, dtype=np.float32)
+        self.observation_space = spaces.Box(low=0.0, high=1.0, shape=new_shape, dtype=np.float32)
 
     @staticmethod
     def observation(observation):
@@ -178,7 +178,7 @@ class BufferWrapper(ObservationWrapper):
         self.dtype = dtype
         self.buffer = None
         old_space = env.observation_space
-        self.observation_space = gym.spaces.Box(
+        self.observation_space = spaces.Box(
             old_space.low.repeat(n_steps, axis=0),
             old_space.high.repeat(n_steps, axis=0),
             dtype=dtype,
@@ -211,7 +211,7 @@ class DataAugmentation(ObservationWrapper):
             raise ModuleNotFoundError("You want to use `gym` which is not installed yet.")
 
         super().__init__(env)
-        self.observation_space = gym.spaces.Box(low=0, high=255, shape=(84, 84, 1), dtype=np.uint8)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(84, 84, 1), dtype=np.uint8)
 
     def observation(self, obs):
         """Preprocess the obs."""

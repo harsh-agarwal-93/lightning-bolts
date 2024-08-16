@@ -40,6 +40,8 @@ class LinearRegression(LightningModule):
             l2_strength: L2 regularization strength (default: ``0.0``)
         """
         super().__init__()
+        self.validation_step_outputs = []
+        self.test_step_outputs = []
         self.save_hyperparameters()
         self.optimizer = optimizer
 
@@ -78,23 +80,29 @@ class LinearRegression(LightningModule):
         x, y = batch
         x = x.view(x.size(0), -1)
         y_hat = self(x)
-        return {"val_loss": F.mse_loss(y_hat, y)}
+        val_loss = F.mse_loss(y_hat, y)
+        self.validation_step_outputs.append(val_loss)
+        return {"val_loss": val_loss}
 
-    def validation_epoch_end(self, outputs: List[Dict[str, Tensor]]) -> Dict[str, Tensor]:
-        val_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+    def on_validation_epoch_end(self) -> Dict[str, Tensor]:
+        val_loss = torch.stack(self.validation_step_outputs).mean()
         tensorboard_logs = {"val_mse_loss": val_loss}
         progress_bar_metrics = tensorboard_logs
+        self.validation_step_outputs.clear()  # free memory
         return {"val_loss": val_loss, "log": tensorboard_logs, "progress_bar": progress_bar_metrics}
 
     def test_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int) -> Dict[str, Tensor]:
         x, y = batch
         y_hat = self(x)
-        return {"test_loss": F.mse_loss(y_hat, y)}
+        test_loss = F.mse_loss(y_hat, y)
+        self.test_step_outputs.append(test_loss)
+        return {"test_loss": test_loss}
 
-    def test_epoch_end(self, outputs: List[Dict[str, Tensor]]) -> Dict[str, Tensor]:
-        test_loss = torch.stack([x["test_loss"] for x in outputs]).mean()
+    def on_test_epoch_end(self) -> Dict[str, Tensor]:
+        test_loss = torch.stack(self.test_step_outputs).mean()
         tensorboard_logs = {"test_mse_loss": test_loss}
         progress_bar_metrics = tensorboard_logs
+        self.test_step_outputs.clear()  # free memory
         return {"test_loss": test_loss, "log": tensorboard_logs, "progress_bar": progress_bar_metrics}
 
     def configure_optimizers(self) -> Optimizer:

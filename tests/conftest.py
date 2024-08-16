@@ -7,7 +7,7 @@ import pytest
 import torch
 from pl_bolts.utils import _IS_WINDOWS, _TORCHVISION_AVAILABLE, _TORCHVISION_LESS_THAN_0_13
 from pl_bolts.utils.stability import UnderReviewWarning
-from pytorch_lightning.trainer.connectors.signal_connector import SignalConnector
+from pytorch_lightning.trainer.connectors.signal_connector import _SignalConnector
 
 # GitHub Actions use this path to cache datasets.
 # Use `datadir` fixture where possible and use `DATASETS_PATH` in
@@ -81,7 +81,7 @@ def restore_signal_handlers():  # noqa: PT004
     This is a safety net for tests that don't run Trainer's teardown.
 
     """
-    valid_signals = SignalConnector._valid_signals()
+    valid_signals = _SignalConnector._valid_signals()
     if not _IS_WINDOWS:
         # SIGKILL and SIGSTOP are not allowed to be modified by the user
         valid_signals -= {signal.SIGKILL, signal.SIGSTOP}

@@ -2,7 +2,7 @@
 from unittest import TestCase
 from unittest.mock import Mock
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
 from pl_bolts.models.rl.common.agents import ActorCriticAgent, Agent, PolicyAgent, ValueAgent
@@ -13,11 +13,12 @@ class TestAgents(TestCase):
     def setUp(self) -> None:
         self.env = gym.make("CartPole-v0")
         self.state = self.env.reset()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.net = Mock()
 
     def test_base_agent(self):
         agent = Agent(self.net)
-        action = agent(self.state, "cuda:0")
+        action = agent(self.state, self.device)
         assert isinstance(action, list)
 
 

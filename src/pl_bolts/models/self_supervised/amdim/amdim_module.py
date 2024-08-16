@@ -124,6 +124,7 @@ class AMDIM(LightningModule):
             batch_size: The batch size
         """
         super().__init__()
+        self.validation_step_outputs = []
         self.save_hyperparameters()
 
         # init encoder
@@ -186,23 +187,6 @@ class AMDIM(LightningModule):
         # _x2 from image 2
         r1_x1, r5_x1, r7_x1, r1_x2, r5_x2, r7_x2 = self.forward(img_1, img_2)
 
-        return {
-            "r1_x1": r1_x1,
-            "r5_x1": r5_x1,
-            "r7_x1": r7_x1,
-            "r1_x2": r1_x2,
-            "r5_x2": r5_x2,
-            "r7_x2": r7_x2,
-        }
-
-    def training_step_end(self, outputs):
-        r1_x1 = outputs["r1_x1"]
-        r5_x1 = outputs["r5_x1"]
-        r7_x1 = outputs["r7_x1"]
-        r1_x2 = outputs["r1_x2"]
-        r5_x2 = outputs["r5_x2"]
-        r7_x2 = outputs["r7_x2"]
-
         # Contrastive task
         loss, lgt_reg = self.contrastive_task((r1_x1, r5_x1, r7_x1), (r1_x2, r5_x2, r7_x2))
         unsupervised_loss = loss.sum() + lgt_reg
@@ -223,16 +207,18 @@ class AMDIM(LightningModule):
         # Contrastive task
         loss, lgt_reg = self.contrastive_task((r1_x1, r5_x1, r7_x1), (r1_x2, r5_x2, r7_x2))
         unsupervised_loss = loss.sum() + lgt_reg
+        self.validation_step_outputs.append(unsupervised_loss)
 
         return {"val_nce": unsupervised_loss}
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
         val_nce = 0
-        for output in outputs:
-            val_nce += output["val_nce"]
+        for output in self.validation_step_outputs:
+            val_nce += output
 
-        val_nce = val_nce / len(outputs)
+        val_nce = val_nce / len(self.validation_step_outputs)
         tensorboard_logs = {"val_nce": val_nce}
+        self.validation_step_outputs.clear()  # free memory
         return {"val_loss": val_nce, "log": tensorboard_logs}
 
     def configure_optimizers(self):

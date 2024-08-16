@@ -64,6 +64,11 @@ class DCGAN(LightningModule):
         self.generator = self._get_generator()
         self.discriminator = self._get_discriminator()
 
+        # Important: This property activates manual optimization.
+        # Follow this example to refactor
+        # https://lightning.ai/docs/pytorch/stable/model/manual_optimization.html#use-multiple-optimizers-like-gans
+        self.automatic_optimization = False
+
         self.criterion = nn.BCELoss()
 
     def _get_generator(self) -> nn.Module:
@@ -105,19 +110,34 @@ class DCGAN(LightningModule):
         noise = noise.view(*noise.shape, 1, 1)
         return self.generator(noise)
 
-    def training_step(self, batch, batch_idx, optimizer_idx):
+    def training_step(self, batch, batch_idx):
+        g_opt, d_opt = self.optimizers()
         real, _ = batch
 
-        # Train discriminator
-        result = None
-        if optimizer_idx == 0:
-            result = self._disc_step(real)
+        ##########################
+        # Optimize Discriminator #
+        ##########################
+        d_opt.zero_grad()
+        self.manual_backward(self._disc_step(real))
+        d_opt.step()
 
-        # Train generator
-        if optimizer_idx == 1:
-            result = self._gen_step(real)
+        ######################
+        # Optimize Generator #
+        ######################
+        g_opt.zero_grad()
+        self.manual_backward(self._gen_step(real))
+        g_opt.step()
 
-        return result
+        # # Train discriminator
+        # result = None
+        # if optimizer_idx == 0:
+        #     result = self._disc_step(real)
+
+        # # Train generator
+        # if optimizer_idx == 1:
+        #     result = self._gen_step(real)
+
+        # return result
 
     def _disc_step(self, real: Tensor) -> Tensor:
         disc_loss = self._get_disc_loss(real)

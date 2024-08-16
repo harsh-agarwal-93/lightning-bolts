@@ -24,7 +24,7 @@ def test_gan(tmpdir, datadir, catch_warnings, dm_cls):
     )
     warnings.filterwarnings(
         "ignore",
-        message="The dataloader, train_dataloader, does not have many workers which may be a bottleneck",
+        message="The 'train_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=31` in the `DataLoader` to improve performance.",
         category=PossibleUserWarning,
     )
     seed_everything(1234)
@@ -47,8 +47,19 @@ def test_gan(tmpdir, datadir, catch_warnings, dm_cls):
 @pytest.mark.parametrize(
     "dm_cls", [pytest.param(MNISTDataModule, id="mnist"), pytest.param(CIFAR10DataModule, id="cifar10")]
 )
-def test_dcgan(tmpdir, datadir, dm_cls):
-    seed_everything()
+def test_dcgan(tmpdir, datadir, catch_warnings, dm_cls):
+    # Validation loop for GANs is not well defined!
+    warnings.filterwarnings(
+        "ignore",
+        message="You passed in a `val_dataloader` but have no `validation_step`. Skipping val loop.",
+        category=UserWarning,
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message="The 'train_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=31` in the `DataLoader` to improve performance.",
+        category=PossibleUserWarning,
+    )
+    seed_everything(1234)
 
     transforms = transform_lib.Compose([transform_lib.Resize(64), transform_lib.ToTensor()])
     dm = dm_cls(data_dir=datadir, train_transforms=transforms, val_transforms=transforms, test_transforms=transforms)

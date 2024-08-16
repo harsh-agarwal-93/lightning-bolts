@@ -108,12 +108,12 @@ def test_unet(catch_warnings):
 def test_semantic_segmentation(tmpdir, catch_warnings):
     warnings.filterwarnings(
         "ignore",
-        message="The dataloader, val_dataloader 0, does not have many workers which may be a bottleneck",
+        message="The 'val_dataloader' does not have many workers which may be a bottleneck.",
         category=PossibleUserWarning,
     )
     warnings.filterwarnings(
         "ignore",
-        message="The dataloader, train_dataloader, does not have many workers which may be a bottleneck",
+        message="The 'train_dataloader' does not have many workers which may be a bottleneck.",
         category=PossibleUserWarning,
     )
     dm = DummyDataModule()

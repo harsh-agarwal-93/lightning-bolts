@@ -54,6 +54,8 @@ class LogisticRegression(LightningModule):
         self.linear = nn.Linear(
             in_features=self.hparams.input_dim, out_features=self.hparams.num_classes, bias=self.hparams.bias
         )
+        self.validation_step_outputs = []
+        self.test_step_outputs = []
 
     def forward(self, x: Tensor) -> Tensor:
         """Forward pass of the model.
@@ -91,7 +93,9 @@ class LogisticRegression(LightningModule):
             Loss tensor.
 
         """
-        return self._shared_step(batch, "val")
+        val_loss = self._shared_step(batch, "val")
+        self.validation_step_outputs.append(val_loss)
+        return val_loss
 
     def test_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int) -> Dict[str, Tensor]:
         """Test step for the model.
@@ -104,9 +108,11 @@ class LogisticRegression(LightningModule):
             Loss tensor.
 
         """
-        return self._shared_step(batch, "test")
+        test_loss = self._shared_step(batch, "test")
+        self.test_step_outputs.append(test_loss)
+        return test_loss
 
-    def validation_epoch_end(self, outputs: List[Dict[str, Tensor]]) -> Dict[str, Tensor]:
+    def on_validation_epoch_end(self) -> Dict[str, Tensor]:
         """Validation epoch end for the model.
 
         Args:
@@ -116,9 +122,11 @@ class LogisticRegression(LightningModule):
             Loss tensor.
 
         """
-        return self._shared_epoch_end(outputs, "val")
+        val_loss = self._shared_epoch_end(self.validation_step_outputs, "val")
+        self.validation_step_outputs.clear()  # free memory
+        return val_loss
 
-    def test_epoch_end(self, outputs: List[Dict[str, Tensor]]) -> Dict[str, Tensor]:
+    def on_test_epoch_end(self) -> Dict[str, Tensor]:
         """Test epoch end for the model.
 
         Args:
@@ -128,7 +136,9 @@ class LogisticRegression(LightningModule):
             Loss tensor.
 
         """
-        return self._shared_epoch_end(outputs, "test")
+        test_loss = self._shared_epoch_end(self.test_step_outputs, "test")
+        self.test_step_outputs.clear()
+        return test_loss
 
     def configure_optimizers(self) -> Optimizer:
         """Configure the optimizer for the model.

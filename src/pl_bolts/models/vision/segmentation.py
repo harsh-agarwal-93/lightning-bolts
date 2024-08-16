@@ -58,6 +58,7 @@ class SemSegment(LightningModule):
 
         super().__init__()
 
+        self.validation_step_outputs = []
         self.num_classes = num_classes
         self.num_layers = num_layers
         self.features_start = features_start
@@ -94,11 +95,13 @@ class SemSegment(LightningModule):
         mask = mask.long()
         out = self(img)
         loss_val = F.cross_entropy(out, mask, ignore_index=self.ignore_index)
+        self.validation_step_outputs.append(loss_val)
         return {"val_loss": loss_val}
 
-    def validation_epoch_end(self, outputs):
-        loss_val = torch.stack([x["val_loss"] for x in outputs]).mean()
+    def on_validation_epoch_end(self):
+        loss_val = torch.stack(self.validation_step_outputs).mean()
         log_dict = {"val_loss": loss_val}
+        self.validation_step_outputs.clear()  # free memory
         return {"log": log_dict, "val_loss": log_dict["val_loss"], "progress_bar": log_dict}
 
     def configure_optimizers(self):

@@ -136,7 +136,7 @@ def test_swav(tmpdir, datadir, catch_warnings):
     )
     trainer = Trainer(
         accelerator=accelerator,
-        devices=devices,
+        devices="auto",
         fast_dev_run=True,
         default_root_dir=tmpdir,
         log_every_n_steps=1,

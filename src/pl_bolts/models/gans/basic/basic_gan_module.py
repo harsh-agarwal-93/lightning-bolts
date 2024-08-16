@@ -57,11 +57,24 @@ class GAN(LightningModule):
         self.generator = self.init_generator(self.img_dim)
         self.discriminator = self.init_discriminator(self.img_dim)
 
+        # Important: This property activates manual optimization.
+        # Follow this example to refactor
+        # https://lightning.ai/docs/pytorch/stable/model/manual_optimization.html#use-multiple-optimizers-like-gans
+        self.automatic_optimization = False
+
     def init_generator(self, img_dim):
         return Generator(latent_dim=self.hparams.latent_dim, img_shape=img_dim)
 
     def init_discriminator(self, img_dim):
         return Discriminator(img_shape=img_dim)
+
+    # def sample_z(self, n) -> Tensor:
+    #     sample = self._Z.sample((n,))
+    #     return sample
+
+    # def sample_G(self, n) -> Tensor:
+    #     z = self.sample_z(n)
+    #     return self.G(z)
 
     def forward(self, z):
         """Generates an image given input noise z.
@@ -106,15 +119,31 @@ class GAN(LightningModule):
         # gradient backprop & optimize ONLY D's parameters
         return real_loss + fake_loss
 
-    def training_step(self, batch, batch_idx, optimizer_idx):
+    def training_step(self, batch, batch_idx):
+        g_opt, d_opt = self.optimizers()
         x, _ = batch
-        # train generator
-        if optimizer_idx == 0:
-            return self.generator_step(x)
-        # train discriminator
-        if optimizer_idx == 1:
-            return self.discriminator_step(x)
-        return None
+
+        ##########################
+        # Optimize Discriminator #
+        ##########################
+        d_opt.zero_grad()
+        self.manual_backward(self.generator_step(x))
+        d_opt.step()
+
+        ######################
+        # Optimize Generator #
+        ######################
+        g_opt.zero_grad()
+        self.manual_backward(self.discriminator_step(x))
+        g_opt.step()
+
+        # # train generator
+        # if optimizer_idx == 0:
+        #     return self.generator_step(x)
+        # # train discriminator
+        # if optimizer_idx == 1:
+        #     return self.discriminator_step(x)
+        # return None
 
     def generator_step(self, x):
         g_loss = self.generator_loss(x)
@@ -135,7 +164,7 @@ class GAN(LightningModule):
 
         opt_g = torch.optim.Adam(self.generator.parameters(), lr=lr)
         opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=lr)
-        return [opt_g, opt_d], []
+        return opt_g, opt_d
 
     @staticmethod
     def add_model_specific_args(parent_parser):

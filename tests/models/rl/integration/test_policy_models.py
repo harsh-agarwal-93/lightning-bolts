@@ -15,7 +15,7 @@ class TestPolicyModels(TestCase):
         self.hparams = parent_parser.parse_args(args_list)
 
         self.trainer = Trainer(
-            gpus=int(torch.cuda.is_available()),
+            accelerator="auto",
             max_steps=100,
             max_epochs=100,  # Set this as the same as max steps to ensure that it doesn't stop early
             val_check_interval=1,  # This just needs 'some' value, does not effect training right now

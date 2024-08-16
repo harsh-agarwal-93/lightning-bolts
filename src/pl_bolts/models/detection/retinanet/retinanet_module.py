@@ -60,6 +60,7 @@ class RetinaNet(LightningModule):
             trainable_backbone_layers: number of trainable resnet layers starting from final block
         """
         super().__init__()
+        self.validation_step_outputs = []
         self.learning_rate = learning_rate
         self.num_classes = num_classes
         self.backbone = backbone
@@ -111,11 +112,12 @@ class RetinaNet(LightningModule):
         # fasterrcnn takes only images for eval() mode
         preds = self.model(images)
         iou = torch.stack([self._evaluate_iou(p, t) for p, t in zip(preds, targets)]).mean()
+        self.validation_step_outputs.append(iou)
         self.log("val_iou", iou, prog_bar=True)
         return {"val_iou": iou}
 
-    def validation_epoch_end(self, outs):
-        avg_iou = torch.stack([o["val_iou"] for o in outs]).mean()
+    def on_validation_epoch_end(self):
+        avg_iou = torch.stack(self.validation_step_outputs).mean()
         self.log("val_avg_iou", avg_iou)
 
     def _evaluate_iou(self, preds, targets):

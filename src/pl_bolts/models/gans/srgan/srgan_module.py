@@ -83,6 +83,11 @@ class SRGAN(pl.LightningModule):
         self.discriminator = SRGANDiscriminator(image_channels, feature_maps_disc)
         self.vgg_feature_extractor = VGG19FeatureExtractor(image_channels)
 
+        # Important: This property activates manual optimization.
+        # Follow this example to refactor
+        # https://lightning.ai/docs/pytorch/stable/model/manual_optimization.html#use-multiple-optimizers-like-gans
+        self.automatic_optimization = False
+
     def configure_optimizers(self) -> Tuple[List[torch.optim.Adam], List[torch.optim.lr_scheduler.MultiStepLR]]:
         opt_disc = torch.optim.Adam(self.discriminator.parameters(), lr=self.hparams.learning_rate)
         opt_gen = torch.optim.Adam(self.generator.parameters(), lr=self.hparams.learning_rate)
@@ -106,20 +111,34 @@ class SRGAN(pl.LightningModule):
         self,
         batch: Tuple[torch.Tensor, torch.Tensor],
         batch_idx: int,
-        optimizer_idx: int,
-    ) -> torch.Tensor:
+    ) -> None:
+        g_opt, d_opt = self.optimizers()
         hr_image, lr_image = batch
 
-        # Train discriminator
-        result = None
-        if optimizer_idx == 0:
-            result = self._disc_step(hr_image, lr_image)
+        ##########################
+        # Optimize Discriminator #
+        ##########################
+        d_opt.zero_grad()
+        self.manual_backward(self._disc_step(hr_image, lr_image))
+        d_opt.step()
 
-        # Train generator
-        if optimizer_idx == 1:
-            result = self._gen_step(hr_image, lr_image)
+        ######################
+        # Optimize Generator #
+        ######################
+        g_opt.zero_grad()
+        self.manual_backward(self._gen_step(hr_image, lr_image))
+        g_opt.step()
 
-        return result
+        # # Train discriminator
+        # result = None
+        # if optimizer_idx == 0:
+        #     result = self._disc_step(hr_image, lr_image)
+
+        # # Train generator
+        # if optimizer_idx == 1:
+        #     result = self._gen_step(hr_image, lr_image)
+
+        # return result
 
     def _disc_step(self, hr_image: torch.Tensor, lr_image: torch.Tensor) -> torch.Tensor:
         disc_loss = self._disc_loss(hr_image, lr_image)
